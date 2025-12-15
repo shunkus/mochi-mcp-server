@@ -2,6 +2,8 @@
 
 An MCP server for creating and managing Mochi Cards flashcards via AI.
 
+Supports both **HTTP/SSE** (for Vercel deployment) and **stdio** (for local use with Claude Desktop).
+
 ## Features
 
 ### Card Operations
@@ -29,21 +31,67 @@ An MCP server for creating and managing Mochi Cards flashcards via AI.
 ### Review
 - `get_due_cards` - Get cards due for review
 
-## Installation
+## Deployment
+
+### Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/shunkus/mochi-mcp-server&env=MOCHI_API_KEY&envDescription=Your%20Mochi%20Cards%20API%20key)
+
+1. Click the deploy button above
+2. Set the `MOCHI_API_KEY` environment variable
+3. Deploy
+
+### API Endpoints
+
+- `GET /` - Server info page
+- `POST /api/mcp` - MCP JSON-RPC endpoint
+- `GET /api/mcp/sse` - SSE endpoint for streaming connections
+- `POST /api/mcp/sse` - SSE message endpoint
+
+### Example Request
+
+```bash
+curl -X POST https://your-domain.vercel.app/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "x-mochi-api-key: YOUR_API_KEY" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }'
+```
+
+## Local Development
+
+### Installation
 
 ```bash
 npm install
+```
+
+### Development Server
+
+```bash
+npm run dev
+```
+
+### Build
+
+```bash
 npm run build
 ```
 
-## Configuration
+## Stdio Mode (Claude Desktop)
 
-### 1. Get Mochi API Key
+For local use with Claude Desktop, use the stdio transport:
 
-1. Log in to [Mochi Cards](https://mochi.cards)
-2. Go to Account Settings → API to get your API key
+### Build stdio version
 
-### 2. Claude Desktop Configuration
+```bash
+npm run build:stdio
+```
+
+### Claude Desktop Configuration
 
 Add the following to `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
@@ -52,7 +100,7 @@ Add the following to `~/Library/Application Support/Claude/claude_desktop_config
   "mcpServers": {
     "mochi": {
       "command": "node",
-      "args": ["/path/to/mochi-mcp-server/dist/index.js"],
+      "args": ["/path/to/mochi-mcp-server/dist/stdio.js"],
       "env": {
         "MOCHI_API_KEY": "your-api-key-here"
       }
@@ -61,23 +109,10 @@ Add the following to `~/Library/Application Support/Claude/claude_desktop_config
 }
 ```
 
-### 3. Claude Code Configuration
+## Getting Mochi API Key
 
-Add the following to `~/.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "mochi": {
-      "command": "node",
-      "args": ["/path/to/mochi-mcp-server/dist/index.js"],
-      "env": {
-        "MOCHI_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
+1. Log in to [Mochi Cards](https://mochi.cards)
+2. Go to Account Settings → API to get your API key
 
 ## Usage
 
@@ -93,14 +128,20 @@ Paris
 
 ### Bulk Card Creation
 
-```
-create_cards_bulk({
-  deck_id: "deck-id",
-  cards: [
-    { content: "Question 1\n---\nAnswer 1" },
-    { content: "Question 2\n---\nAnswer 2", tags: ["tag1", "tag2"] }
-  ]
-})
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "create_cards_bulk",
+    "arguments": {
+      "deck_id": "deck-id",
+      "cards": [
+        { "content": "Question 1\n---\nAnswer 1" },
+        { "content": "Question 2\n---\nAnswer 2", "tags": ["tag1", "tag2"] }
+      ]
+    }
+  }
+}
 ```
 
 ## Notes
